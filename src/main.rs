@@ -1,7 +1,7 @@
 use axum::{routing::get, Router};
 use axum_hello_world::{
     fallback::{api_fallback, app_fallback},
-    users::{create_user, get_user, get_users, UsersDb},
+    users::{create_user, delete_user, get_user, get_users, update_user, UsersDb},
 };
 use std::net::SocketAddr;
 
@@ -11,7 +11,7 @@ async fn main() {
 
     let users_api = Router::with_state(users_db)
         .route("/", get(get_users).post(create_user))
-        .route("/:id", get(get_user));
+        .route("/:id", get(get_user).put(update_user).delete(delete_user));
 
     let api = Router::new()
         .nest("/users", users_api)

@@ -28,6 +28,12 @@ pub struct GetUserDto {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct UpdateUserDto {
+    name: Option<String>,
+    username: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct CreateUserDto {
     name: String,
     username: String,
@@ -88,4 +94,37 @@ pub async fn create_user(
     users_db.write().unwrap().insert(user.id, user.clone());
 
     (StatusCode::CREATED, Json(user))
+}
+
+pub async fn update_user(
+    Path(id): Path<Uuid>,
+    State(users_db): State<UsersDb>,
+    Json(dto): Json<UpdateUserDto>,
+) -> Result<impl IntoResponse, StatusCode> {
+    let mut user = users_db
+        .read()
+        .unwrap()
+        .get(&id)
+        .cloned()
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    if let Some(name) = dto.name {
+        user.name = name;
+    }
+
+    if let Some(username) = dto.username {
+        user.username = username;
+    }
+
+    users_db.write().unwrap().insert(user.id, user.clone());
+
+    Ok(Json(user))
+}
+
+pub async fn delete_user(Path(id): Path<Uuid>, State(users_db): State<UsersDb>) -> StatusCode {
+    if users_db.write().unwrap().remove(&id).is_some() {
+        StatusCode::NO_CONTENT
+    } else {
+        StatusCode::NOT_FOUND
+    }
 }
